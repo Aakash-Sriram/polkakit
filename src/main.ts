@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 import { Command } from "commander";
-import { subscribeNewHeads } from "./tools/rpc";
+import { getLatestBlockDetailsByNumber, subscribeNewHeads } from "./tools/rpc";
 import { getBlockDetails } from "./tools/rpc";
 
 const program = new Command();
@@ -8,7 +8,7 @@ const program = new Command();
 program
   .name("dotcli")
   .description("Polkadot CLI toolkit")
-  .version("0.1.0");
+  .version("0.0.3");
 
 program
   .command("tail")
@@ -18,10 +18,16 @@ program
   });
 
 program
-  .command("block <hash>")
-  .description("Get details of a specific block by its hash")
-  .action(async (hash: string) => {
-    await getBlockDetails(hash);
+  .command("block <input>")
+  .description("Get details of a specific block by hash or number")
+  .action(async (input: string) => {
+    const blockNum = Number(input);
+    if (input.startsWith("0x")) {
+      // input is a block hash
+      await getBlockDetails(input);
+    } else {
+      await getLatestBlockDetailsByNumber(blockNum);
+    }
   });
 
 

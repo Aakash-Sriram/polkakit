@@ -58,3 +58,16 @@ export async function getBlockDetails(blockHash: string) {
 }
 
   
+export async function getLatestBlockDetailsByHash() {
+  const myApi = await api();
+  const latestHeader = await myApi.rpc.chain.getHeader();
+  const latestBlockHash = latestHeader.hash;
+  await getBlockDetails(latestBlockHash.toHex());
+}
+
+export async function getLatestBlockDetailsByNumber(number:number){
+    const myApi = await api();
+    const blockHash = await myApi.rpc.chain.getBlockHash(number);
+    await getBlockDetails(blockHash.toHex());
+
+}

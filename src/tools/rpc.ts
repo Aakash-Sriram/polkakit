@@ -1,6 +1,6 @@
 import { api } from "./api";
 import chalk from "chalk";
-
+import { boxEm } from "../util/BoxEm";
 export async function subscribeNewHeads() {
   console.log(chalk.cyan("Connecting to Polkadot..."));
 
@@ -24,3 +24,37 @@ export async function subscribeNewHeads() {
 
   return unsubscribe;
 }
+export async function getBlockDetails(blockHash: string) {
+  const myApi = await api();
+  const myBlock = await myApi.rpc.chain.getBlock(blockHash);
+  const header = myBlock.block.header;
+  const extrinsics = myBlock.block.extrinsics;
+
+  const { parentHash, number, hash } = header;
+
+  let timestamp: string | null = null;
+
+  for (const ext of extrinsics) {
+    const { method } = ext;
+
+    if (method.section === "timestamp" && method.method === "set") {
+      const raw = parseInt(method.args[0].toString(), 10);
+      timestamp = new Date(raw).toISOString();
+      break;
+    }
+  }
+
+  if (!timestamp) {
+    timestamp = "N/A";
+  }
+
+  boxEm(
+    number.toString(),
+    hash.toHex(),
+    parentHash.toHex(),
+    timestamp,                      
+    extrinsics.length
+  );
+}
+
+  

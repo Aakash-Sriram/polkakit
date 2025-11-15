@@ -9,7 +9,7 @@ import {
 
 const program = new Command();
 
-program.name("dotcli").description("Polkadot CLI toolkit").version("0.0.3");
+program.name("polkakit").description("Polkadot CLI toolkit").version("0.0.1");
 
 program
   .command("watch")

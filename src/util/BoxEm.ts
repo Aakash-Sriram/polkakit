@@ -35,14 +35,17 @@ export function BlockDetailsPrettyPrint(
 export function ChainPrettyPrint(
   chain:String,
   nodeName:String,
-  nodeVersion: String
+  nodeVersion: String,
+  chainType:String
 ) {
   const output =
     chalk.cyan(chain) +
     "\n" +
     chalk.cyan(nodeName) +
     "\n" +
-    chalk.cyan(nodeVersion);
+    chalk.cyan(nodeVersion) +
+    "\n" +
+    chalk.cyan(chainType);
 
   const boxed = boxen(output, {
     padding: 1,

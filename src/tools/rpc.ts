@@ -119,8 +119,9 @@ export async function getChainInfo() {
   const chain = await myApi.rpc.system.chain();
   const nodeName = await myApi.rpc.system.name();
   const nodeVersion = await myApi.rpc.system.version();
-
-  ChainPrettyPrint(chain.toString(), nodeName.toString(), nodeVersion.toString());
+  const chainType = await myApi.rpc.system.chainType();
+  console.log(`${chainType.toString()}\n`);
+  ChainPrettyPrint(chain.toString(), nodeName.toString(), nodeVersion.toString(),chainType.toString());
 }
 
 

@@ -22,12 +22,16 @@ rpc
 
     console.log(chalk.cyan("Watching new blocks...\n"));
 
-    await subscribeNewHeads(api, (block) => {
-      console.log(
-        chalk.green(
-          `New Block #${block.number}  Hash: ${block.hash}`
+    await subscribeNewHeads(api, async (block) => {
+        const data = await getBlockDetails(api,block.hash);
+        const {number , hash, parentHash, timestamp, extrinsics} = data;
+        BlockDetailsPrettyPrint(
+          number,
+          hash,
+          parentHash,
+          timestamp,
+          extrinsics.length
         )
-      );
     });
   });
 
@@ -51,6 +55,7 @@ rpc
       data.timestamp,
       data.extrinsics.length
     );
+    process.exit(0);
   });
 
 rpc
@@ -67,6 +72,7 @@ rpc
       data.timestamp,
       data.extrinsics.length
     );
+    process.exit(0);
   });
 
 rpc

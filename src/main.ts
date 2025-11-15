@@ -4,6 +4,7 @@ import {
   subscribeNewHeads,
   getBlockDetails,
   getBlockDetailsByNumber,
+  getChainInfo,
 } from "./tools/rpc";
 
 const program = new Command();
@@ -28,6 +29,15 @@ program
     } else {
       await getBlockDetailsByNumber(blockNum);
     }
+  });
+
+
+program
+  .command("chain")
+  .description("Get chain information")
+  .action(async () => {
+    await getChainInfo();
+    process.exit(0);
   });
 
 program.parse(process.argv);

@@ -1,6 +1,9 @@
 import boxen from "boxen";
 import chalk from "chalk";
-export function boxEm(
+//====================
+//====================
+
+export function BlockDetailsPrettyPrint(
   blockNumber: string,
   hash: string,
   parent: string,
@@ -24,4 +27,31 @@ export function boxEm(
       titleAlignment: "center",
     })
   );
+}
+
+//====================
+//====================
+
+export function ChainPrettyPrint(
+  chain:String,
+  nodeName:String,
+  nodeVersion: String
+) {
+  const output =
+    chalk.cyan(chain) +
+    "\n" +
+    chalk.cyan(nodeName) +
+    "\n" +
+    chalk.cyan(nodeVersion);
+
+  const boxed = boxen(output, {
+    padding: 1,
+    margin: 1,
+    borderStyle: "round",
+    borderColor: "green",
+    title: "Chain Info",
+    titleAlignment: "center",
+  });
+
+  console.log(boxed);
 }

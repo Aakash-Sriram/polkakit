@@ -1,6 +1,10 @@
 import { api } from "./api";
 import chalk from "chalk";
-import { boxEm } from "../util/BoxEm";
+import { BlockDetailsPrettyPrint , ChainPrettyPrint } from "../util/BoxEm";
+
+// ====================================
+// Subscribe to new heads and fetch block details
+// ====================================
 
 export async function subscribeNewHeads() {
   console.log(chalk.cyan("Connecting to Polkadot..."));
@@ -66,6 +70,14 @@ export async function getBlockDetails(blockHash: string) {
     }
   });
 
+  BlockDetailsPrettyPrint(
+    number.toString(),
+    hash.toHex(),
+    parentHash.toHex(),
+    timestamp,
+    extrinsics.length,
+  );
+  console.log("\n");
   console.log(chalk.yellow("\nExtrinsics:"));
   decoded.forEach((ex) => {
     if (!ex.error) {
@@ -76,16 +88,6 @@ export async function getBlockDetails(blockHash: string) {
       console.log(`  [${ex.index}] <decode error>`);
     }
   });
-
-  console.log("\n");
-
-  boxEm(
-    number.toString(),
-    hash.toHex(),
-    parentHash.toHex(),
-    timestamp,
-    extrinsics.length,
-  );
 }
 
 export async function getBlockDetailsByHash() {
@@ -102,3 +104,25 @@ export async function getBlockDetailsByNumber(number: number) {
   const blockHash = await myApi.rpc.chain.getBlockHash(number);
   await getBlockDetails(blockHash.toHex());
 }
+
+// ====================================
+// ====================================
+
+
+// ====================================
+// Get chain info
+// ====================================
+
+
+export async function getChainInfo() {
+  const myApi = await api();
+  const chain = await myApi.rpc.system.chain();
+  const nodeName = await myApi.rpc.system.name();
+  const nodeVersion = await myApi.rpc.system.version();
+
+  ChainPrettyPrint(chain.toString(), nodeName.toString(), nodeVersion.toString());
+}
+
+
+// ====================================
+// ====================================

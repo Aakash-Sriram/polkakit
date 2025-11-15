@@ -11,6 +11,9 @@ importers:
       '@polkadot/api':
         specifier: ^16.5.2
         version: 16.5.2
+      '@polkadot/util':
+        specifier: ^13.5.8
+        version: 13.5.8
       '@types/node':
         specifier: ^24.10.1
         version: 24.10.1

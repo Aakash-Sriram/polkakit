@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "ignoreDeprecations":"6.0",//modulResoltion = node is troubling ts idk why
+    "ignoreDeprecations":"6.0",//"moduleResolution = node"  is causing troubles idk y
   }
 }

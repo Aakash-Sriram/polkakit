@@ -4,8 +4,8 @@ import { Command } from "commander";
 
 // Import your command groups
 import { rpc } from "./rpc";
+import { query } from "./query";
 // TODO
-// import { query } from "./query";
 // import { tx } from "./tx";
 // import { consts } from "./consts";
 // import { events } from "./events";
@@ -19,8 +19,8 @@ program
 
 // Register subcommands
 program.addCommand(rpc);
+program.addCommand(query);
 // TODO
-// program.addCommand(query);
 // program.addCommand(tx);
 // program.addCommand(consts);
 // program.addCommand(events);

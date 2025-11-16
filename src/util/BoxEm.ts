@@ -39,13 +39,13 @@ export function ChainPrettyPrint(
   chainType:String
 ) {
   const output =
-    chalk.cyan(chain) +
+    `${chalk.yellow("Chain: ")}`+chalk.cyan(chain) +
     "\n" +
-    chalk.cyan(nodeName) +
+    `${chalk.yellow("Node Name: ")}`+chalk.cyan(nodeName) +
     "\n" +
-    chalk.cyan(nodeVersion) +
+    `${chalk.yellow("Node Version: ")}`+chalk.cyan(nodeVersion) +
     "\n" +
-    chalk.cyan(chainType);
+    `${chalk.yellow("Chain Type: ")}`+chalk.cyan(chainType);
 
   const boxed = boxen(output, {
     padding: 1,

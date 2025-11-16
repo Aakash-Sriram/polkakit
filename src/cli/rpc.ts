@@ -2,14 +2,16 @@ import { Command } from "commander";
 import chalk from "chalk";
 
 import { connect } from "../lib/api";
-import { subscribeNewHeads } from "../lib/stream";
+import { 
+  subscribeNewHeads,
+  getChainInfo
+} from "../lib/rpc";
 import {
   getBlockDetails,
   getBlockDetailsByNumber,
   getLatestBlockDetails
-} from "../lib/blocks";
+} from "../lib/rpc";
 
-import { getChainInfo } from "../lib/chain";
 import { BlockDetailsPrettyPrint, ChainPrettyPrint } from "../util/BoxEm";
 
 export const rpc = new Command("rpc");
@@ -83,10 +85,10 @@ rpc
     const info = await getChainInfo(api);
 
     ChainPrettyPrint(
-      info.chain,
-      info.nodeName,
-      info.nodeVersion,
-      info.chainType
+      "Chain: "+info.chain,
+      "Node Name: "+info.nodeName,
+      "Node Version: "+info.nodeVersion,
+      "Chain Type: "+info.chainType
     );
     process.exit(0);
   });

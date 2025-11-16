@@ -12,7 +12,7 @@ import {
   getLatestBlockDetails
 } from "../lib/rpc";
 
-import { BlockDetailsPrettyPrint, ChainPrettyPrint } from "../util/BoxEm";
+import { prettyBox } from "../util/BoxEm";
 
 export const rpc = new Command("rpc");
 
@@ -27,13 +27,13 @@ rpc
     await subscribeNewHeads(api, async (block) => {
         const data = await getBlockDetails(api,block.hash);
         const {number , hash, parentHash, timestamp, extrinsics} = data;
-        BlockDetailsPrettyPrint(
-          number,
-          hash,
-          parentHash,
-          timestamp,
-          extrinsics.length
-        )
+        prettyBox("Block Details", {
+          Number: number,
+          Hash: hash,
+          "Parent Hash": parentHash,
+          Timestamp: timestamp,
+          "Extrinsics Count": extrinsics.length
+        });
     });
   });
 
@@ -50,13 +50,13 @@ rpc
       data = await getBlockDetailsByNumber(api, Number(input));
     }
 
-    BlockDetailsPrettyPrint(
-      data.number,
-      data.hash,
-      data.parentHash,
-      data.timestamp,
-      data.extrinsics.length
-    );
+    prettyBox("Block Details", {
+      Number: data.number,
+      Hash: data.hash,
+      "Parent Hash": data.parentHash,
+      Timestamp: data.timestamp,
+      "Extrinsics Count": data.extrinsics.length
+    });
     process.exit(0);
   });
 
@@ -67,13 +67,13 @@ rpc
     const api = await connect();
     const data = await getLatestBlockDetails(api);
 
-    BlockDetailsPrettyPrint(
-      data.number,
-      data.hash,
-      data.parentHash,
-      data.timestamp,
-      data.extrinsics.length
-    );
+    prettyBox("Latest Block", {
+      Number: data.number,
+      Hash: data.hash,
+      "Parent Hash": data.parentHash,
+      Timestamp: data.timestamp,
+      "Extrinsics Count": data.extrinsics.length
+    });
     process.exit(0);
   });
 
@@ -84,11 +84,11 @@ rpc
     const api = await connect();
     const info = await getChainInfo(api);
 
-    ChainPrettyPrint(
-      "Chain: "+info.chain,
-      "Node Name: "+info.nodeName,
-      "Node Version: "+info.nodeVersion,
-      "Chain Type: "+info.chainType
-    );
+    prettyBox("Chain Info", {
+      Chain: info.chain,
+      "Node Name": info.nodeName,
+      "Node Version": info.nodeVersion,
+      "Chain Type": info.chainType
+    });
     process.exit(0);
   });

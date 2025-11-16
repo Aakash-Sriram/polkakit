@@ -2,7 +2,9 @@ import { Command } from "commander";
 import { connect } from "../lib/api";
 import { prettyBox } from "../util/BoxEm";
 import { 
-    getFilteredEvents
+    getEventsByBlockHash,
+    getFilteredEvents,
+    getRawEvents
 } from "../lib/events";
 
 export const query = new Command("query");
@@ -32,8 +34,18 @@ query
 query
   .command("events")
   .description("Get filtered recent system events")
-  .action(async () => {
+  .option("-b, --block <hash>", "Fetch events from a specific block")
+  .action(async (options) => {
     const api = await connect();
+    if(options.block){
+       const {events} = await getEventsByBlockHash(api, options.block); 
+       prettyBox(
+         `System Events from\nBlock Hash : ${options.block}`,
+        events.map((e, index) => 
+        `${index}: ${e.section}.${e.method}(${JSON.stringify(e.data)})`
+       ));
+       process.exit(0);
+    }
     const filtered = await getFilteredEvents(api);
     const {blockNumber , events} = filtered;
     if (!events || events.length === 0) {

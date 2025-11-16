@@ -87,3 +87,26 @@ export async function getFilteredEvents(api) {
     events: filtered
   };
 }
+
+//==========================
+//Get latest Block Number
+//==========================
+
+export async function getLatestBlockNumber(api) {
+    return  await api.system.number();
+}
+
+//==========================
+//Get events by block hash
+//==========================
+
+export async function getEventsByBlockHash(api, blockHash) {
+    const events =  await api.query.system.events.at(blockHash);
+    const header = await api.rpc.chain.getHeader(blockHash);
+    const blockNumber = header.number.toNumber();
+    const filtered = await filterEvents(blockNumber,events);
+    return {
+        blockNumber,
+        events: filtered
+    };
+}

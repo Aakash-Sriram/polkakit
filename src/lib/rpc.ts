@@ -26,7 +26,6 @@ export async function getBlockDetails(api, blockHash) {
     extrinsics: decoded
   };
 }
-
 export async function getBlockDetailsByNumber(api, number) {
   const hash = await api.rpc.chain.getBlockHash(number);
   return getBlockDetails(api, hash.toHex());

@@ -1,7 +1,9 @@
 import { Command } from "commander";
-import chalk from "chalk";
 import { connect } from "../lib/api";
 import { prettyBox } from "../util/BoxEm";
+import { 
+    getFilteredEvents
+} from "../lib/events";
 
 export const query = new Command("query");
 
@@ -27,4 +29,26 @@ query
         });
         process.exit(0);
     });
+query
+  .command("events")
+  .description("Get filtered recent system events")
+  .action(async () => {
+    const api = await connect();
+    const filtered = await getFilteredEvents(api);
+    const {blockNumber , events} = filtered;
+    if (!events || events.length === 0) {
+      console.log("No relevant events in this block.");
+      process.exit(0);
+    }
 
+    prettyBox(
+        `Filtered System Events from\nBlock : ${blockNumber}`,
+        events.map(e => 
+        `${e.index}: ${e.section}.${e.method}(${JSON.stringify(e.data)})`
+      )
+      
+    );
+
+    process.exit(0);
+  });
+  

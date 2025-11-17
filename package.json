@@ -51,6 +51,6 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "ts-node": "@polkadot/types/types"
+    "ts-node": "^10.9.2"
   }
 }

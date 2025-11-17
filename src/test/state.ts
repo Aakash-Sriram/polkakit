@@ -1,6 +1,10 @@
-import test from "node:test";
 import { createProvider } from "../lib/provider";
-import { getAllAssets, getAllOrmlTokens, getAllPalletAssets, getBalance, getSupportedTokens } from "../lib/state";
+import { 
+    getPortfolio, 
+    getAllOrmlTokens, 
+    getAllPalletAssets, 
+    getBalance, 
+    getSupportedTokens } from "../lib/state";
 import { ApiPromise } from "@polkadot/api";
 const ADDRESS = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 const RPC = "wss://rpc.polkadot.io";
@@ -48,7 +52,7 @@ const testPalletAssets = async (api:ApiPromise) => {
 
 const testAll = async (api:ApiPromise) => {
 
-    const portfolio = await getAllAssets(api, ADDRESS);
+    const portfolio = await getPortfolio(api, ADDRESS);
     console.log("\nFull Asset");
     console.log(JSON.stringify(portfolio, null, 2));
     await api.disconnect();

@@ -125,7 +125,7 @@ export const getAllPalletAssets = async (api: ApiPromise, address: string) => {
   }
 };
 
-export const getAllAssets = async (api: ApiPromise, address: string) => {
+export const getPortfolio = async (api: ApiPromise, address: string) => {
   const native = await getBalance(api, address);
   const orml = await getAllOrmlTokens(api, address);
   const palletAssets = await getAllPalletAssets(api, address);
@@ -136,3 +136,4 @@ export const getAllAssets = async (api: ApiPromise, address: string) => {
     palletAssets
   };
 };
+

@@ -5,12 +5,15 @@
   "main": "index.js",
   
   "bin": {
-    "polkakit": "dist/cli/index.js"
+    "polkakit": "dist/cli/index.js" 
   },
   "scripts": {
     "build": "tsup src/index.ts src/cli/index.ts --format esm,cjs --dts",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": " ts-node --project tsconfig.dev.json src/cli/index.ts"
+    "dev": "ts-node --project tsconfig.dev.json src/cli/index.ts",
+    "cli": "ts-node src/cli/index.ts",
+    "test:state": "ts-node src/test/state.ts",
+    "test:metadata": "ts-node src/test/metadata.ts"
   },
   "keywords": [],
   "author": "",

@@ -1,4 +1,132 @@
-# Polkakit (polkakit)
+# Polkakit
+
+Polkakit is a lightweight TypeScript SDK and CLI for interacting with Substrate-based chains (Polkadot, Kusama, and parachains) built on top of `@polkadot/api`.
+
+This repository includes:
+
+- A small SDK under `src/lib/` with helpers for connecting to nodes, querying chain state, decoding blocks, and inspecting events and assets.
+- A CLI under `src/cli/` (Commander-based) exposing common developer commands.
+- Small example/test scripts under `src/test/` demonstrating functionality.
+
+---
+
+## Quick start
+
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+Run the CLI (developer mode, using ts-node):
+
+```bash
+pnpm run cli -- rpc latest
+pnpm run cli -- rpc watch
+pnpm run cli -- query account-info <ADDRESS>
+pnpm run cli -- query events
+```
+
+Run example/test scripts:
+
+```bash
+pnpm run test:state
+pnpm run test:metadata
+```
+
+---
+
+## What’s implemented
+
+- Provider helpers: connection caching, create/disconnect.
+- RPC helpers: fetch block details (by hash/number), latest block, subscribe to new heads, chain info.
+- Event helpers: read raw events, filter events (allow-list), events by block hash.
+- State & asset helpers: account info, native balance lookup, ORML tokens enumeration, Assets pallet enumeration, aggregate asset view.
+- Metadata helpers: discover pallets, extrinsics and storage entries, list RPC namespaces.
+- CLI commands: `rpc` and `query` groups (watch, block, latest, chain-info, account-info, events).
+
+## Programmatic API (where to look)
+
+Primary modules live in `src/lib/`:
+
+- `provider.ts` — createProvider, connect, getProviderInstance, disconnect
+- `rpc.ts` — getBlockDetails, getBlockDetailsByNumber, getLatestBlockDetails, subscribeNewHeads, getChainInfo
+- `events.ts` — getRawEvents, filterEvents, getFilteredEvents, getEventsByBlockHash
+- `state.ts` — getBalance, getSupportedTokens, getAllOrmlTokens, getAllPalletAssets, getAllAssets
+- `metadata.ts` — getTokenMetadata, getNativeToken, getAvailablePallets, getRpcNamespaces, getExtrinsics, getStorageEntries
+
+See `src/test/` for small runnable examples.
+
+## Utilities
+
+The CLI uses a single universal pretty-printer located at `src/util/BoxEm.ts`:
+
+```ts
+prettyBox(title: string, fields: Record<string, any>)
+```
+
+Example usage in your code:
+
+```ts
+import { prettyBox } from './src/util/BoxEm';
+
+prettyBox('Account Info', {
+  Address: '5Gw...QY',
+  Nonce: 3,
+  Free: '123.456 DOT'
+});
+```
+
+## CLI commands
+
+- `rpc watch` — subscribe and pretty-print new blocks
+- `rpc block <hash|number>` — fetch block details
+- `rpc latest` — fetch the latest block
+- `rpc chain-info` — fetch chain and node info
+- `query account-info <accountId>` — display account nonce and balances
+- `query events [-b, --block <hash>]` — display filtered events for latest block or a specific block
+
+Default RPC endpoint in the CLI is `wss://rpc.polkadot.io`. Use the SDK directly to target alternate endpoints.
+
+## Tests & examples
+
+Run the example scripts with:
+
+```bash
+pnpm run test:state
+pnpm run test:metadata
+```
+
+These exercise balance and asset readers (including ORML and Assets pallet enumeration) and metadata introspection.
+
+## Notes & recommended fixes
+
+- Some helpers depend on runtime pallets (`balances`, `tokens`, `assets`). The library checks for their presence and returns sensible defaults when missing.
+- `events.ts` portability: prefer using `api.rpc.chain.getHeader()` for latest block information where appropriate.
+
+## Contributing
+
+Contributions welcome. Typical workflow:
+
+1. Fork and branch.
+2. Run `pnpm install`.
+3. Test with `pnpm run cli` or the test scripts.
+4. Add unit tests for new logic.
+
+## License
+
+Add a LICENSE file before publishing. The repository does not currently include a license.
+
+---
+
+If you want, I can:
+
+- add `src/index.ts` to export a minimal public SDK surface,
+- add a `--rpc` flag to CLI commands,
+- implement unit tests for `filterEvents` and add CI.
+
+Tell me which and I will implement it.
+
 
 Polkakit is a lightweight TypeScript toolkit and CLI for interacting with Substrate-based chains (Polkadot, Kusama and parachains) using `@polkadot/api`.
 
@@ -39,118 +167,196 @@ pnpm install
 Run CLI commands with `ts-node` (developer mode):
 
 ```bash
-# get latest block
+# Polkakit — A Lightweight Polkadot SDK + CLI
+
+Polkakit is a developer-focused TypeScript toolkit and CLI built on top of `@polkadot/api`. It reduces boilerplate for common Polkadot developer tasks and provides:
+
+- A small SDK under `src/lib/` with helpers for connecting, querying, and decoding chain state.
+- A CLI under `src/cli/` exposing useful commands for exploring blocks, events, and accounts.
+
+This README reflects the code currently implemented in the repository (provider helpers, RPC helpers, event filtering, balance and asset helpers, metadata introspection, and CLI commands).
+
+## Table of contents
+
+- Features implemented
+- Installation
+- CLI usage (examples)
+- Programmatic API (detailed)
+- Tests and example scripts
+- Internals and file map
+- Roadmap and contributing
+
+## Features implemented
+
+- Provider management with caching and graceful disconnects.
+- RPC helpers: fetch block details (by hash or number), get latest block, subscribe to new heads, get chain/node info.
+- Event helpers: read raw events, filter events by allow-list, and query events by block hash.
+- Storage & state helpers: fetch account info and balances; support for ORML Tokens and Assets pallet.
+- Metadata introspection: list pallets, extrinsics and storage entries, and discover RPC namespaces.
+- CLI: `rpc` and `query` groups with subcommands for common developer tasks.
+
+## Installation
+
+Install project dependencies:
+
+```bash
+pnpm install
+```
+
+Run CLI commands directly with `ts-node` (developer mode):
+
+```bash
 pnpm exec ts-node src/cli/index.ts rpc latest
-
-# watch new blocks
 pnpm exec ts-node src/cli/index.ts rpc watch
-
-# query account info
 pnpm exec ts-node src/cli/index.ts query account-info <ADDRESS>
-
-# get filtered events (or provide -b <hash>)
 pnpm exec ts-node src/cli/index.ts query events
-pnpm exec ts-node src/cli/index.ts query events -b <BLOCK_HASH>
 ```
 
-If you prefer, compile with `tsc` and publish the compiled `dist/` files for a production-ready package.
+You can also run the test/example scripts under `src/test/` with `ts-node`.
 
-## CLI usage (what's available)
+## CLI usage (available commands)
 
-The CLI lives in `src/cli/` and registers the following commands:
+- `rpc watch` — subscribe and pretty-print new blocks
+- `rpc block <hash|number>` — fetch block details
+- `rpc latest` — fetch the latest block
+- `rpc chain-info` — fetch chain and node info
+- `query account-info <accountId>` — display account nonce and balances
+- `query events [-b, --block <hash>]` — display filtered events for latest block or a specific block
 
-- `rpc watch` — Subscribe to new blocks and pretty-print a summary for each.
-- `rpc block <hash|number>` — Print detailed info for a block by hash or number.
-- `rpc latest` — Print latest block.
-- `rpc chain-info` — Print chain and node information (chain name, node version, health).
-- `query account-info <accountId>` — Print account nonce and token balances.
-- `query events [-b, --block <hash>]` — Print filtered events from the latest block or the specified block hash.
+By default the CLI connects to `wss://rpc.polkadot.io`; you can change this by calling the SDK functions directly.
 
-The CLI currently uses `wss://rpc.polkadot.io` as the default endpoint. You can adjust the code or call SDK functions directly to use a different endpoint.
+## Programmatic API (detailed)
 
-## Programmatic API (what's implemented)
+All SDK helpers are implemented in `src/lib/`. Below is a summary of the available functions and behaviors.
 
-The following modules and functions are implemented in `src/lib/`.
-
-Provider (src/lib/provider.ts)
-
-- createProvider(RPC_URL: string): Promise<ApiPromise>
-  - Creates a brand-new ApiPromise connected to RPC_URL.
-
-- connect(RPC_URL: string): Promise<ApiPromise>
-  - Returns a cached provider when possible; otherwise creates and caches a new one.
-
-- getProviderInstance(RPC_URL?): Promise<ApiPromise>
-  - Returns the cached provider, or throws if not initialized and no RPC_URL provided.
-
-- disconnect(): Promise<void>
-  - Disconnects an active provider and clears cache.
-
-RPC helpers (src/lib/rpc.ts)
-
-- getBlockDetails(api, blockHash) — Decode a block and return { number, hash, parentHash, timestamp, extrinsics }.
-- getBlockDetailsByNumber(api, number) — Convenience wrapper that resolves block hash and calls getBlockDetails.
-- getLatestBlockDetails(api) — Gets the latest header and decodes that block.
-- subscribeNewHeads(api, onBlock) — Subscribes to new headers and invokes the callback with a compact block object.
-- getChainInfo(api) — Returns chain, nodeName, nodeVersion, chainType and health information.
-
-Event helpers (src/lib/events.ts)
-
-- ALLOWED_EVENT_SECTIONS and ALLOWED_EVENTS — allow lists used to focus on relevant event types.
-- getRawEvents(api) — Get all system events at the latest block.
-- filterEvents(blockNumber, events) — Filter events by allow lists and map them to a safe shape.
-- getFilteredEvents(api) — Convenience wrapper (getRawEvents + filterEvents).
-- getEventsByBlockHash(api, blockHash) — Read & filter events for a given block hash.
-
-Storage & state (src/lib/query.ts and src/lib/state.ts)
-
-- accountInfo(api, accountId) — Returns `api.query.system.account(accountId)` (raw result object).
-- getBalance(api, address) — Tries `balances.freeBalance` first, falls back to `tokens.accounts` when available; returns shape { symbol, decimals, free, reserved, frozen, source }.
-- getSupportedTokens(api) — Returns chain token symbols & decimals read from `api.registry`.
-
-Metadata & introspection (src/lib/metadata.ts)
-
-- getTokenMetadata(api) — Symbol, decimals, and existentialDeposit (if available).
-- getNativeToken(api) — Returns the primary token symbol and decimals.
-- getAvailablePallets(api) — Lists pallet names exposed under `api.query`, `api.tx`, and `api.consts`.
-- getRpcNamespaces(api) — Lists `api.rpc` namespaces.
-- getExtrinsics(api, pallet) — Returns extrinsic call names for a given pallet (throws if pallet missing in `api.tx`).
-- getStorageEntries(api, pallet) — Returns storage entry names for a given pallet (throws if missing in `api.query`).
-
-Utilities
-
-- `src/util/BoxEm.ts` — Pretty-print helper functions used by the CLI (boxen + chalk wrappers).
-
-## Examples (programmatic)
-
-Basic connect and get latest block
+Provider helpers (`src/lib/provider.ts`)
 
 ```ts
-import { connect, disconnect } from './src/lib/provider';
-import { getLatestBlockDetails } from './src/lib/rpc';
+// Creates a new ApiPromise connected to the given RPC URL
+createProvider(RPC_URL: string): Promise<ApiPromise>
 
-async function main(){
-  const api = await connect('wss://rpc.polkadot.io');
-  const block = await getLatestBlockDetails(api);
-  console.log('Latest block:', block.number, block.hash);
-  await disconnect();
-}
+// Returns a cached ApiPromise if already connected to the same endpoint
+connect(RPC_URL: string): Promise<ApiPromise>
 
-main().catch(console.error);
+// Returns cached provider or creates one if RPC_URL supplied
+getProviderInstance(RPC_URL?: string): Promise<ApiPromise>
+
+// Disconnect and clear cache
+disconnect(): Promise<void>
 ```
 
-Fetch and filter recent events
+RPC helpers (`src/lib/rpc.ts`)
 
 ```ts
-import { connect } from './src/lib/provider';
-import { getFilteredEvents } from './src/lib/events';
-
-const api = await connect('wss://rpc.polkadot.io');
-const { blockNumber, events } = await getFilteredEvents(api);
-console.log(blockNumber, events);
+getBlockDetails(api, blockHash) // -> { number, hash, parentHash, timestamp, extrinsics }
+getBlockDetailsByNumber(api, number)
+getLatestBlockDetails(api)
+subscribeNewHeads(api, onBlock)
+getChainInfo(api)
 ```
 
-Get account balance (supports multiple token systems)
+Event helpers (`src/lib/events.ts`)
+
+- `ALLOWED_EVENT_SECTIONS` and `ALLOWED_EVENTS` — lists used to filter noisy events and focus on relevant ones.
+- `getRawEvents(api)` — returns all system events at the latest block.
+- `filterEvents(blockNumber, events)` — filters and maps events into a compact shape.
+- `getFilteredEvents(api)` — convenience wrapper: getRawEvents + filter.
+- `getEventsByBlockHash(api, blockHash)` — returns filtered events for a specific block hash.
+
+Storage & state helpers (`src/lib/state.ts`)
+
+Key functions:
+
+```ts
+getBalance(api, address) // reads balances or tokens accounts, returns { symbol, decimals, free, reserved, frozen, source }
+getSupportedTokens(api) // reads api.registry.chainTokens and chainDecimals
+getAllOrmlTokens(api, address) // enumerates ORML tokens via api.query.tokens.metadata and reads balances
+getAllPalletAssets(api, address) // enumerates assets in the Assets pallet and reads account balances
+getAllAssets(api, address) // aggregates native, orml and assets-pallet balances into one object
+```
+
+Notes:
+- `getAllOrmlTokens` will return an empty array if the ORML `tokens` pallet is not present.
+- `getAllPalletAssets` will return an empty array if the `assets` pallet is not available.
+
+Metadata helpers (`src/lib/metadata.ts`)
+
+```ts
+getTokenMetadata(api) // symbols, decimals, existentialDeposit
+getNativeToken(api) // primary symbol and decimals
+getAvailablePallets(api) // lists for query/tx/consts
+getRpcNamespaces(api) // Object.keys(api.rpc)
+getExtrinsics(api, pallet) // list call names for a pallet
+getStorageEntries(api, pallet) // list storage entries for a pallet
+```
+
+Utilities (`src/util/BoxEm.ts`)
+
+- A single universal pretty-printer used by the CLI:
+
+```ts
+prettyBox(title: string, fields: Record<string, any>)
+```
+
+This `prettyBox` function formats a titled box of labeled fields (uses `boxen` + `chalk`) and is the single entry point for CLI pretty printing.
+
+## Tests and example scripts
+
+There are several small scripts under `src/test/` that demonstrate and exercise features. Run them with `ts-node`.
+
+- `src/test/metadata.ts` — prints token metadata, native token, available pallets, rpc namespaces, storage entries and extrinsics for balances.
+- `src/test/state.ts` — exercises balance and asset readers including ORML tokens and Assets pallet; it calls:
+
+  - `getBalance`
+  - `getSupportedTokens`
+  - `getAllOrmlTokens`
+  - `getAllPalletAssets`
+  - `getAllAssets`
+
+Run an example test script:
+
+```bash
+pnpm exec ts-node src/test/state.ts
+pnpm exec ts-node src/test/metadata.ts
+```
+
+## Internals & file map
+
+- `src/cli/` — commander-based CLI (`index.ts`, `rpc.ts`, `query.ts`).
+- `src/lib/` — SDK helpers (`provider.ts`, `rpc.ts`, `events.ts`, `query.ts`, `state.ts`, `metadata.ts`).
+- `src/util/` — CLI pretty printers (`BoxEm.ts`).
+- `src/test/` — small example/test scripts for manual verification.
+
+## Known issues and notes
+
+- Some helpers make runtime assumptions (presence of `balances`, `tokens`, or `assets` pallets). The code attempts to detect presence, but behavior will vary by chain.
+- `getLatestBlockNumber` in `events.ts` previously used `api.system.number()` which may not exist on all chains — prefer `api.rpc.chain.getHeader()` for portability.
+- The repo is source-first (TypeScript under `src/`) — publishing to npm requires building to JS and adding appropriate `package.json` `main`/`types` entries.
+
+## Roadmap / suggested next steps
+
+- Add a `src/index.ts` that exports a clean public SDK surface for consumers.
+- Add a `--rpc` flag to the CLI to override the default RPC endpoint.
+- Add unit tests for `filterEvents` and CI to run them.
+- Publish compiled packages to npm with proper `name` (`polkakit`) and `types`.
+
+## Contributing
+
+Contributions welcome — please run `pnpm install`, exercise the CLI with `ts-node` and add tests for new logic.
+
+## License
+
+Add a LICENSE file before publishing. The repository currently has no license declared.
+
+---
+
+If you want, I can now:
+
+- Add `src/index.ts` and wire `package.json` for publishing.
+- Add example scripts under `src/examples/` and unit tests for `filterEvents`.
+- Add a `--rpc` option to the CLI.
+
+Tell me which you'd like and I'll implement it.
 
 ```ts
 import { connect } from './src/lib/provider';

@@ -87,9 +87,10 @@ rpc
 
     prettyBox("Chain Info", {
       Chain: info.chain,
-      "Node Name": info.nodeName,
+      "Name": info.nodeName,
       "Node Version": info.nodeVersion,
-      "Chain Type": info.chainType
+      "Chain Type": info.chainType,
+      "Health": JSON.stringify(info.health)
     });
     process.exit(0);
   });

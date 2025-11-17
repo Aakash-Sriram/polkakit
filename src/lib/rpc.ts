@@ -53,15 +53,16 @@ export async function subscribeNewHeads(api, onBlock) {
 
 export async function getChainInfo(api) {
   const chain = await api.rpc.system.chain();
-  const nodeName = await api.rpc.system.name();
+  const Name = await api.rpc.system.name();
   const nodeVersion = await api.rpc.system.version();
   const chainType = await api.rpc.system.chainType();
-
+  const health = await api.rpc.system.health();
   return {
     chain: chain.toString(),
-    nodeName: nodeName.toString(),
+    nodeName: Name.toString(),
     nodeVersion: nodeVersion.toString(),
-    chainType: chainType.toString()
+    chainType: chainType.toString(),
+    health: health.toHuman()
   };
 }
 

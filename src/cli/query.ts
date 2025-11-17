@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { connect } from "../lib/api";
+import { connect } from "../lib/provider";
 import { prettyBox } from "../util/BoxEm";
 import { 
     getEventsByBlockHash,

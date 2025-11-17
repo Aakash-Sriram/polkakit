@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import chalk from "chalk";
 
-import { connect } from "../lib/api";
+import { connect } from "../lib/provider";
 import { 
   subscribeNewHeads,
   getChainInfo

@@ -1,9 +1,7 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
-export const connect = async () => {
+export const connect = async (RPC_URL:string) => {
     const connect = await ApiPromise.create({
-        provider: new WsProvider("wss://rpc.polkadot.io"),
+        provider: new WsProvider(RPC_URL),
     });
-    return connect;
-
-    
+    return connect; 
 }

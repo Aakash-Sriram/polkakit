@@ -6,14 +6,14 @@ import {
     getFilteredEvents,
     getRawEvents
 } from "../lib/events";
-
+const DEFAULT_RPC = "wss://rpc.polkadot.io";
 export const query = new Command("query");
 
 query
     .command("account-info <accountId>")
     .description("Get account information by account ID")
     .action(async (accountId) => {
-        const api = await connect();
+        const api = await connect(DEFAULT_RPC);
         const info = await api.query.system.account(accountId);
         const jsonInfo = info.toJSON() as any;
         const {nonce, consumers,providers,sufficients,data} = jsonInfo
@@ -36,7 +36,7 @@ query
   .description("Get filtered recent system events")
   .option("-b, --block <hash>", "Fetch events from a specific block")
   .action(async (options) => {
-    const api = await connect();
+    const api = await connect(DEFAULT_RPC);
     if(options.block){
        const {events} = await getEventsByBlockHash(api, options.block); 
        prettyBox(

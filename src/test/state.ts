@@ -1,5 +1,5 @@
 import { createProvider } from "../lib/provider";
-import { getBalance } from "../lib/state";
+import { getBalance, getSupportedTokens } from "../lib/state";
 const test1 = async () => {
     const address = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY";
     const api = await createProvider("wss://rpc.polkadot.io");
@@ -17,4 +17,12 @@ const test2 = async () =>{
     console.log("Balance Info:", balance);
 }
 
-test2().catch(console.error);
+// test2().catch(console.error);
+
+const test3 = async () =>{
+    const api = await createProvider("wss://rpc.polkadot.io");
+    const tokens = getSupportedTokens(api);
+    console.log("Supported Tokens:", tokens);
+}
+
+test3().catch(console.error);

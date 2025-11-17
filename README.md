@@ -1,12 +1,13 @@
+
 # Polkakit
 
-Polkakit is a lightweight TypeScript SDK and CLI for interacting with Substrate-based chains (Polkadot, Kusama, and parachains) built on top of `@polkadot/api`.
+Lightweight TypeScript SDK and CLI for Substrate-based chains (Polkadot, Kusama, parachains).
 
-This repository includes:
+## Install
+npm install polkakit
 
-- A small SDK under `src/lib/` with helpers for connecting to nodes, querying chain state, decoding blocks, and inspecting events and assets.
-- A CLI under `src/cli/` (Commander-based) exposing common developer commands.
-- Small example/test scripts under `src/test/` demonstrating functionality.
+This README documents the public SDK helpers in `src/lib/` and the CLI in `src/cli/`.
+Development/example scripts under `src/test/` exist but are intentionally not documented here.
 
 ---
 
@@ -18,52 +19,313 @@ Install dependencies:
 pnpm install
 ```
 
-Run the CLI (developer mode, using ts-node):
+Run the CLI (developer mode):
 
 ```bash
 pnpm run cli -- rpc latest
 pnpm run cli -- rpc watch
-pnpm run cli -- query account-info <ADDRESS>
+pnpm run cli -- query account-info ADDRESS_HERE
 pnpm run cli -- query events
-```
-
-Run example/test scripts:
-
-```bash
-pnpm run test:state
-pnpm run test:metadata
 ```
 
 ---
 
-## What’s implemented
+## Implemented modules (summary)
 
-- Provider helpers: connection caching, create/disconnect.
-- RPC helpers: fetch block details (by hash/number), latest block, subscribe to new heads, chain info.
-- Event helpers: read raw events, filter events (allow-list), events by block hash.
-- State & asset helpers: account info, native balance lookup, ORML tokens enumeration, Assets pallet enumeration, aggregate asset view.
-- Metadata helpers: discover pallets, extrinsics and storage entries, list RPC namespaces.
-- CLI commands: `rpc` and `query` groups (watch, block, latest, chain-info, account-info, events).
+All primary helpers live under `src/lib/`.
 
-## Programmatic API (where to look)
+Provider helpers (`src/lib/provider.ts`)
 
-Primary modules live in `src/lib/`:
+```ts
+createProvider(rpcUrl: string): Promise<ApiPromise>
+connect(rpcUrl: string): Promise<ApiPromise>
+getProviderInstance(rpcUrl?: string): Promise<ApiPromise>
+disconnect(): Promise<void>
+```
 
-- `provider.ts` — createProvider, connect, getProviderInstance, disconnect
-- `rpc.ts` — getBlockDetails, getBlockDetailsByNumber, getLatestBlockDetails, subscribeNewHeads, getChainInfo
-- `events.ts` — getRawEvents, filterEvents, getFilteredEvents, getEventsByBlockHash
-- `state.ts` — getBalance, getSupportedTokens, getAllOrmlTokens, getAllPalletAssets, getAllAssets
-- `metadata.ts` — getTokenMetadata, getNativeToken, getAvailablePallets, getRpcNamespaces, getExtrinsics, getStorageEntries
+RPC helpers (`src/lib/rpc.ts`)
 
-See `src/test/` for small runnable examples.
+```ts
+getBlockDetails(api, blockHash)
+getBlockDetailsByNumber(api, number)
+getLatestBlockDetails(api)
+subscribeNewHeads(api, onBlock)
+getChainInfo(api)
+```
+
+Event helpers (`src/lib/events.ts`)
+
+```ts
+getRawEvents(api)
+filterEvents(blockNumber, events)
+getFilteredEvents(api)
+getEventsByBlockHash(api, blockHash)
+```
+
+State & asset helpers (`src/lib/state.ts`)
+
+```ts
+getBalance(api, address)
+getSupportedTokens(api)
+getAllOrmlTokens(api, address)
+getAllPalletAssets(api, address)
+getAllAssets(api, address)
+```
+
+Transactions helpers (`src/lib/transactions.ts`)
+
+```ts
+sendTransfer(api, sender, to, amount) // signs and submits balances.transferAllowDeath
+```
+
+Metadata helpers (`src/lib/metadata.ts`)
+
+```ts
+getTokenMetadata(api)
+getNativeToken(api)
+getAvailablePallets(api)
+getRpcNamespaces(api)
+getExtrinsics(api, pallet)
+getStorageEntries(api, pallet)
+```
 
 ## Utilities
 
-The CLI uses a single universal pretty-printer located at `src/util/BoxEm.ts`:
+Single CLI pretty-printer (`src/util/BoxEm.ts`):
 
 ```ts
 prettyBox(title: string, fields: Record<string, any>)
 ```
+
+## CLI overview
+
+Key commands (see `src/cli/`):
+
+- `rpc watch` — stream new blocks and pretty-print summaries
+- `rpc block <hash|number>` — fetch and print block details
+- `rpc latest` — print latest block details
+- `rpc chain-info` — show chain and node info
+- `query account-info <address>` — print account info (nonce, balances)
+- `query events [-b, --block <hash>]` — show filtered system events
+
+Default endpoint: `wss://rpc.polkadot.io` (you can target other endpoints by calling the SDK directly).
+
+## Security and usage notes
+
+- `sendTransfer` demonstrates signing and sending a balance transfer using a Keyring pair — suitable for development only. For production, use secure external signers (extension, hardware wallet, or remote signer).
+- Helpers try to detect runtime pallets (balances, tokens, assets) and return sensible defaults when absent, but behavior varies by chain.
+
+## Suggested finalization steps
+
+1. Add a LICENSE file.
+2. Add `src/index.ts` to export a public SDK surface and update `package.json` `main`/`types` for the compiled build.
+3. Add unit tests (for example, for `filterEvents`) and CI.
+4. Add a CLI `--rpc` option to override the default endpoint at runtime.
+5. Build and publish compiled artifacts (ESM + CJS).
+
+I can implement step 2 (public SDK entry) and optionally add a safe `tx send` CLI command if you want.
+
+---
+
+## Contributing
+
+Fork, run `pnpm install`, use the CLI for manual checks, and submit PRs with tests.
+
+## License
+
+Add a LICENSE file before publishing.
+# Polkakit
+
+Lightweight TypeScript SDK and CLI for Substrate chains (Polkadot, Kusama, parachains).
+
+This README documents the library surface in `src/lib/` and the CLI in `src/cli/`. Development-only test/example scripts exist in the repository but are intentionally omitted from this documentation.
+
+---
+
+## Quick start
+
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+Run the CLI (developer mode):
+
+```bash
+pnpm run cli -- rpc latest
+pnpm run cli -- rpc watch
+pnpm run cli -- query account-info ADDRESS_HERE
+pnpm run cli -- query events
+```
+
+---
+
+## Implemented modules (summary)
+
+All primary helpers live under `src/lib/`.
+
+Provider helpers (src/lib/provider.ts):
+
+```ts
+createProvider(rpcUrl: string): Promise<ApiPromise>
+connect(rpcUrl: string): Promise<ApiPromise>
+getProviderInstance(rpcUrl?: string): Promise<ApiPromise>
+disconnect(): Promise<void>
+```
+
+RPC helpers (src/lib/rpc.ts):
+
+```ts
+getBlockDetails(api, blockHash)
+getBlockDetailsByNumber(api, number)
+getLatestBlockDetails(api)
+subscribeNewHeads(api, onBlock)
+getChainInfo(api)
+```
+
+Event helpers (src/lib/events.ts):
+
+```ts
+getRawEvents(api)
+filterEvents(blockNumber, events)
+getFilteredEvents(api)
+getEventsByBlockHash(api, blockHash)
+```
+
+State & asset helpers (src/lib/state.ts):
+# Polkakit
+
+Lightweight TypeScript SDK and CLI for Substrate-based chains (Polkadot, Kusama, parachains).
+
+This README documents the public SDK helpers in `src/lib/` and the CLI in `src/cli/`. Development/example scripts in `src/test/` are present in the repo but are intentionally not documented here.
+
+---
+
+## Quick start
+
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+Run the CLI (developer mode):
+
+```bash
+pnpm run cli -- rpc latest
+pnpm run cli -- rpc watch
+pnpm run cli -- query account-info ADDRESS_HERE
+pnpm run cli -- query events
+```
+
+---
+
+## Implemented modules (summary)
+
+All primary helpers live under `src/lib/`.
+
+Provider helpers (`src/lib/provider.ts`)
+
+```ts
+createProvider(rpcUrl: string): Promise<ApiPromise>
+connect(rpcUrl: string): Promise<ApiPromise>
+getProviderInstance(rpcUrl?: string): Promise<ApiPromise>
+disconnect(): Promise<void>
+```
+
+RPC helpers (`src/lib/rpc.ts`)
+
+```ts
+getBlockDetails(api, blockHash)
+getBlockDetailsByNumber(api, number)
+getLatestBlockDetails(api)
+subscribeNewHeads(api, onBlock)
+getChainInfo(api)
+```
+
+Event helpers (`src/lib/events.ts`)
+
+```ts
+getRawEvents(api)
+filterEvents(blockNumber, events)
+getFilteredEvents(api)
+getEventsByBlockHash(api, blockHash)
+```
+
+State & asset helpers (`src/lib/state.ts`)
+
+```ts
+getBalance(api, address)
+getSupportedTokens(api)
+getAllOrmlTokens(api, address)
+getAllPalletAssets(api, address)
+getAllAssets(api, address)
+```
+
+Transactions helpers (`src/lib/transactions.ts`)
+
+```ts
+sendTransfer(api, sender, to, amount) // signs and submits balances.transferAllowDeath
+```
+
+Metadata helpers (`src/lib/metadata.ts`)
+
+```ts
+getTokenMetadata(api)
+getNativeToken(api)
+getAvailablePallets(api)
+getRpcNamespaces(api)
+getExtrinsics(api, pallet)
+getStorageEntries(api, pallet)
+```
+
+## Utilities
+
+Single CLI pretty-printer (`src/util/BoxEm.ts`):
+
+```ts
+prettyBox(title: string, fields: Record<string, any>)
+```
+
+## CLI overview
+
+Key commands (see `src/cli/`):
+
+- `rpc watch` — stream new blocks and pretty-print summaries
+- `rpc block <hash|number>` — fetch and print block details
+- `rpc latest` — print latest block details
+- `rpc chain-info` — show chain and node info
+- `query account-info <address>` — print account info (nonce, balances)
+- `query events [-b, --block <hash>]` — show filtered system events
+
+Default endpoint: `wss://rpc.polkadot.io` (you can target other endpoints by calling the SDK directly).
+
+## Security and usage notes
+
+- `sendTransfer` demonstrates signing and sending a balance transfer using a Keyring pair — suitable for development only. For production, use secure external signers (extension, hardware wallet, or remote signer).
+- Helpers attempt to detect runtime pallets (balances, tokens, assets) and return sensible defaults when absent, but behavior varies by chain.
+
+## Suggested finalization steps
+
+1. Add a LICENSE file.
+2. Add `src/index.ts` to export a public SDK surface and update `package.json` `main`/`types` for the compiled build.
+3. Add unit tests (for example, for `filterEvents`) and CI.
+4. Add a CLI `--rpc` option to override the default endpoint at runtime.
+5. Build and publish compiled artifacts (ESM + CJS).
+
+I can implement step 2 (public SDK entry) and optionally add a safe `tx send` CLI command if you want.
+
+---
+
+## Contributing
+
+Fork, run `pnpm install`, use the CLI for manual checks, and submit PRs with tests.
+
+## License
+
+Add a LICENSE file before publishing.
+
 
 Example usage in your code:
 
@@ -76,6 +338,29 @@ prettyBox('Account Info', {
   Free: '123.456 DOT'
 });
 ```
+
+## Transactions helpers (src/lib/transactions.ts)
+
+This module contains helpers to construct, sign and submit extrinsics. Currently implemented:
+
+- `sendTransfer(api, sender, to, amount)` — signs and submits a balances transfer (uses `transferAllowDeath`) and returns a Promise that resolves when the transaction is included in a block. The helper inspects events to detect `ExtrinsicFailed` and decodes module errors via `api.registry.findMetaError` to produce a readable error message.
+
+Usage example (programmatic):
+
+```ts
+import { Keyring } from '@polkadot/keyring';
+import { connect } from './src/lib/provider';
+import { sendTransfer } from './src/lib/transactions';
+
+const api = await connect('wss://rpc.polkadot.io');
+const keyring = new Keyring({ type: 'sr25519' });
+const alice = keyring.addFromUri('//Alice'); // dev-only
+
+const res = await sendTransfer(api, alice, '5F3sa2TJ...', 1_000_000_000_000n);
+console.log('Transfer result:', res);
+```
+
+Security note: Do not hard-code private keys/mnemonics for mainnet usage — use secure signers (browser extension, hardware) in production.
 
 ## CLI commands
 

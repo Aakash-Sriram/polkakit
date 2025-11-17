@@ -1,10 +1,22 @@
 {
   "name": "polkakit",
   "version": "0.0.1",
-  "description": "",
+  "description": "Universal Polkadot/Substrate SDK & CLI",
   "main": "index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "polkakit": "dist/cli/index.js"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "repository": {
+  "type": "git",
+  "url": "https://github.com/Aakash-Sriram/polkakit.git"
+  },
+  "homepage": "https://github.com/Aakash-Sriram/polkakit",
+  "bugs": {
+    "url": "https://github.com/Aakash-Sriram/polkakit/issues"
   },
   "scripts": {
     "build": "tsup src/index.ts src/cli/index.ts --format esm,cjs --dts",
@@ -21,6 +33,7 @@
   "packageManager": "pnpm@10.22.0",
   "dependencies": {
     "@polkadot/api": "^16.5.2",
+    "@polkadot/api-contract": "^16.5.2",
     "@polkadot/keyring": "^13.5.8",
     "@polkadot/util": "^13.5.8",
     "@polkadot/util-crypto": "^13.5.8",
@@ -34,7 +47,7 @@
     "inquirer": "^12.11.0",
     "ora": "^9.0.0",
     "tsup": "^8.5.1",
-    "types": "link:@polkadot/keyring/types",
+    "types": "@polkadot/keyring/types",
     "typescript": "^5.9.3"
   },
   "devDependencies": {

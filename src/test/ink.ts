@@ -111,10 +111,4 @@ You must install a contracts-enabled chain:
 Option A — easiest
 docker run -p 9944:9944 -it paritytech/contracts-node:latest
 
-Option B — manually
-rustup default stable
-rustup target add wasm32-unknown-unknown
-cargo install contracts-node --git https://github.com/paritytech/contracts-node --force
-substrate-contracts-node --dev
-
  */

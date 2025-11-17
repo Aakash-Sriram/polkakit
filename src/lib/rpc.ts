@@ -1,4 +1,12 @@
-export async function getBlockDetails(api, blockHash) {
+import { ApiPromise } from "@polkadot/api";
+
+export async function getBlockDetails(api:ApiPromise, blockHash:string):Promise<{
+  number:number,
+  hash:string,
+  parentHash:string,
+  timestamp:string | null,
+  extrinsics:any
+}> {
   const block = await api.rpc.chain.getBlock(blockHash);
   const header = block.block.header;
   const extrinsics = block.block.extrinsics;
@@ -20,23 +28,23 @@ export async function getBlockDetails(api, blockHash) {
 
   return {
     number: header.number.toNumber(),
-    hash: header.hash.toHex(),
-    parentHash: header.parentHash.toHex(),
+    hash: header.hash.toString(),
+    parentHash: header.parentHash.toString(),
     timestamp,
     extrinsics: decoded
   };
 }
-export async function getBlockDetailsByNumber(api, number) {
+export async function getBlockDetailsByNumber(api:ApiPromise, number:number) {
   const hash = await api.rpc.chain.getBlockHash(number);
   return getBlockDetails(api, hash.toHex());
 }
 
-export async function getLatestBlockDetails(api) {
+export async function getLatestBlockDetails(api:ApiPromise) {
   const header = await api.rpc.chain.getHeader();
   return getBlockDetails(api, header.hash.toHex());
 }
 
-export async function subscribeNewHeads(api, onBlock) {
+export async function subscribeNewHeads(api:ApiPromise, onBlock:any) {
   return api.rpc.chain.subscribeNewHeads((header) => {
     const block = {
       number: header.number.toNumber(),
@@ -51,7 +59,12 @@ export async function subscribeNewHeads(api, onBlock) {
   });
 }
 
-export async function getChainInfo(api) {
+export const getChainInfo = async(api:ApiPromise):Promise<{
+chain:string,
+nodeName:string,
+nodeVersion:string,
+chainType:string,
+health:any}> =>{
   const chain = await api.rpc.system.chain();
   const Name = await api.rpc.system.name();
   const nodeVersion = await api.rpc.system.version();

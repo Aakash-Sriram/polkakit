@@ -1,6 +1,6 @@
 {
   "name": "polkakit",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Universal Polkadot/Substrate SDK & CLI",
   "main": "index.js",
   "types": "dist/index.d.ts",

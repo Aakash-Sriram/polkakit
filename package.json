@@ -1,8 +1,8 @@
 {
   "name": "polkakit",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Universal Polkadot/Substrate SDK & CLI",
-  "main": "index.js",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
     "polkakit": "dist/cli/index.js"
@@ -10,34 +10,47 @@
   "files": [
     "dist/**/*"
   ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "repository": {
-  "type": "git",
-  "url": "https://github.com/Aakash-Sriram/polkakit.git"
+    "type": "git",
+    "url": "https://github.com/Aakash-Sriram/polkakit.git"
   },
   "homepage": "https://github.com/Aakash-Sriram/polkakit",
   "bugs": {
     "url": "https://github.com/Aakash-Sriram/polkakit/issues"
   },
   "scripts": {
+    "prepublishOnly": "npm run build",
     "build": "tsup src/index.ts src/cli/index.ts --format esm,cjs --dts",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node --project tsconfig.dev.json src/cli/index.ts",
     "cli": "ts-node src/cli/index.ts",
     "test:state": "ts-node src/test/state.ts",
     "test:metadata": "ts-node src/test/metadata.ts",
     "test:transaction": "ts-node src/test/transaction.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.22.0",
+  "keywords": [
+    "polkadot",
+    "substrate",
+    "blockchain",
+    "sdk",
+    "cli",
+    "kusama",
+    "parachain"
+  ],
+  "author": "Aakash Sriram",
+  "license": "MIT",
   "dependencies": {
     "@polkadot/api": "^16.5.2",
     "@polkadot/api-contract": "^16.5.2",
     "@polkadot/keyring": "^13.5.8",
     "@polkadot/util": "^13.5.8",
     "@polkadot/util-crypto": "^13.5.8",
-    "@types/node": "^24.10.1",
     "boxen": "^8.0.1",
     "chalk": "^5.6.2",
     "cli-table3": "^0.6.5",
@@ -45,12 +58,12 @@
     "dotenv": "^17.2.3",
     "figlet": "^1.9.3",
     "inquirer": "^12.11.0",
-    "ora": "^9.0.0",
-    "tsup": "^8.5.1",
-    "types": "@polkadot/keyring/types",
-    "typescript": "^5.9.3"
+    "ora": "^8.2.0"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2"
+    "@types/node": "^24.10.1",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
   }
 }

@@ -1,3 +1,288 @@
+ # Polkakit
+
+Polkakit is a focused TypeScript SDK and CLI for Substrate-based chains (Polkadot, Kusama, and parachains). It provides small, pragmatic helpers built on top of `@polkadot/api` to reduce boilerplate for common developer tasks: connecting to a node, inspecting blocks/events, enumerating token assets, and sending simple transactions.
+
+This README gives a concise, professional reference for each implemented module in `src/lib/` and the CLI in `src/cli/`. It documents function contracts (inputs, outputs, failure modes), examples, and recommended follow-ups for publishing and QA. Example/test scripts that ship with the repo are intentionally not documented here.
+
+---
+
+## Quick start
+
+Install dependencies and run the CLI in development mode:
+
+```bash
+pnpm install
+pnpm run cli -- rpc latest
+```
+
+If you prefer to call the SDK directly from TypeScript:
+
+```ts
+import { connect } from './src/lib/provider';
+import { getBalance } from './src/lib/state';
+
+const api = await connect('wss://rpc.polkadot.io');
+const balance = await getBalance(api, '12D3KooW...');
+console.log(balance);
+```
+
+---
+
+## Design goals — short
+
+- Minimal, pragmatic helpers that work across Substrate chains.
+- Fail gracefully when optional pallets (e.g., ORML `tokens`, `assets`) are absent.
+- Keep the CLI focused on developer inspection (not wallet features).
+- Make programmatic helpers composable for higher-level tooling.
+
+---
+
+## Module reference (professional descriptions)
+
+For each module below you'll find: Purpose, Contract (inputs/outputs), Behavior & failure modes, Edge cases, and a short example.
+
+### Provider — `src/lib/provider.ts`
+
+Purpose
+- Create and reuse ApiPromise instances and provide a single place to manage connection lifecycle.
+
+Contract
+- createProvider(rpcUrl: string): Promise<ApiPromise>
+  - Inputs: rpcUrl (wss/http RPC endpoint)
+  - Output: fully-initialized ApiPromise (connected)
+  - Errors: rejects if connection fails or handshake times out
+
+- connect(rpcUrl: string): Promise<ApiPromise>
+  - Inputs: rpcUrl (optional) — returns cached instance for the same endpoint
+  - Output: cached or newly created ApiPromise
+  - Errors: propagated from createProvider
+
+- getProviderInstance(rpcUrl?: string): Promise<ApiPromise>
+  - Convenience accessor; resolves to the active provider
+
+- disconnect(): Promise<void>
+  - Gracefully disconnects provider and clears cache
+
+Behavior & failure modes
+- Internally caches ApiPromise by RPC URL to avoid duplicate connections. If a provider becomes disconnected unexpectedly, callers should retry `connect` to obtain a fresh instance.
+
+Edge cases
+- Some chains limit subscriptions per connection — prefer reusing an ApiPromise instead of creating many.
+
+Example
+```ts
+const api = await connect('wss://rpc.polkadot.io');
+// use api
+await disconnect();
+```
+
+### RPC helpers — `src/lib/rpc.ts`
+
+Purpose
+- Lightweight wrappers for common RPC operations: fetch block details (by hash or number), fetch latest block data, chain/node info, and subscribe to new heads.
+
+Contract
+- getBlockDetails(api, blockHash) => Promise<BlockDetails>
+- getBlockDetailsByNumber(api, blockNumber) => Promise<BlockDetails>
+- getLatestBlockDetails(api) => Promise<BlockDetails>
+- subscribeNewHeads(api, onBlock: (header) => void) => unsubscribeFn
+- getChainInfo(api) => Promise<ChainInfo>
+
+Behavior & failure modes
+- These functions make explicit RPC calls and convert polkadot-js types into small plain objects. They reject on underlying RPC failures. Long-running subscriptions may raise errors if the connection drops — handlers should be prepared to resubscribe.
+
+Edge cases
+- Light clients or specialized parachains may not expose the full set of RPCs; callers should handle missing fields.
+
+Example
+```ts
+const latest = await getLatestBlockDetails(api);
+console.log(latest.number, latest.hash);
+const unsub = await subscribeNewHeads(api, header => console.log('new', header.number.toString()));
+// later: unsub();
+```
+
+### Events — `src/lib/events.ts`
+
+Purpose
+- Read, filter, and present on-chain events with an allow-list to reduce noise (e.g., system/pallet events are filtered to focus on developer-relevant notifications).
+
+Contract
+- getRawEvents(api): Promise<RawEvent[]>
+- filterEvents(blockNumber: number, events: RawEvent[]): FilteredEvent[]
+- getFilteredEvents(api): Promise<FilteredEvent[]>
+- getEventsByBlockHash(api, blockHash): Promise<FilteredEvent[]>
+
+Behavior & failure modes
+- The module reads `api.query.system.events` and maps events. Filtering is deterministic based on `ALLOWED_EVENT_SECTIONS`/`ALLOWED_EVENTS`. If an event's metadata cannot be decoded, the event is returned with minimal information and a `decodeError` flag.
+
+Edge cases
+- Events may include chain-specific custom events; these are ignored unless added to allow-lists. Reorganization: the block that contained an event might be retracted — event readers only reflect the current finalized/head data fetched from the node.
+
+Example
+```ts
+const events = await getFilteredEvents(api);
+events.forEach(e => console.log(e.section, e.method, e.data));
+```
+
+### State & asset helpers — `src/lib/state.ts`
+
+Purpose
+- Read balances and enumerate token assets from common pallets (native balances, ORML `tokens`, and the `assets` pallet). Provide a single aggregated view of an account's assets.
+
+Contract
+- getBalance(api, address): Promise<BalanceInfo>
+- getSupportedTokens(api): Promise<TokenDefinition[]>
+- getAllOrmlTokens(api, address): Promise<AssetBalance[]>
+- getAllPalletAssets(api, address): Promise<AssetBalance[]>
+- getPortfolio(api, address): Promise<{ native: BalanceInfo, orml: AssetBalance[], assets: AssetBalance[] }>
+
+Behavior & failure modes
+- Each reader first detects whether the expected pallet exists (`api.query.tokens`, `api.query.assets`) and then enumerates token metadata before reading balances. If a pallet is missing, the function returns an empty list for that category rather than throwing.
+
+Edge cases
+- Token metadata may include decimals and symbol; when decimals are missing, callers must treat values as raw plancks and format carefully.
+
+Example
+```ts
+const all = await getAllAssets(api, address);
+console.log('native', all.native.free);
+console.table(all.orml);
+```
+
+### Transactions — `src/lib/transactions.ts`
+
+Purpose
+- Provide a minimal, explicit helper to sign and submit a Balances transfer and return a clear, decoded result. Intended for developer tooling and examples (not a wallet implementation).
+
+Contract
+- sendTransfer(api, senderKeypair, to: string, amount: bigint): Promise<SubmitResult>
+  - Resolves with inclusion result (blockHash, events) on success
+  - Rejects with decoded module error for `ExtrinsicFailed` events
+
+Behavior & failure modes
+- Uses `transferAllowDeath` to submit an extrinsic. Subscribes to status updates and inspects emitted events. If an `ExtrinsicFailed` is observed, the helper attempts to decode the module error using `api.registry.findMetaError` to present a human-friendly error message. If decoding fails, it returns the raw error indices.
+
+Security
+- This helper expects a keypair (KeyringPair) to be provided by the caller. Do not embed mnemonics or private keys in production code. Use external signers for production.
+
+Example
+```ts
+const result = await sendTransfer(api, aliceKeypair, bobAddress, 1_000_000_000n);
+console.log('included in', result.blockHash);
+```
+
+### Metadata — `src/lib/metadata.ts`
+
+Purpose
+- Introspect runtime metadata: discover pallets, available storage keys, extrinsics, and RPC namespaces. Helpful for tooling that adapts to different runtimes.
+
+Contract
+- getTokenMetadata(api): Promise<TokenMetadata>
+- getNativeToken(api): Promise<{ symbol: string, decimals: number }>
+- getAvailablePallets(api): Promise<{ query: string[], tx: string[], consts: string[] }>
+- getRpcNamespaces(api): Promise<string[]>
+- getExtrinsics(api, pallet): Promise<string[]>
+- getStorageEntries(api, pallet): Promise<string[]>
+
+Behavior & failure modes
+- Uses `api.registry` and `api.runtimeMetadata` to extract metadata. If requested pallets or entries are absent, functions return empty arrays rather than throwing.
+
+Example
+```ts
+const pallets = await getAvailablePallets(api);
+console.log('query pallets', pallets.query);
+```
+
+### Utilities — `src/util/BoxEm.ts`
+
+Purpose
+- Small CLI pretty-printer used by CLI commands to display results in a consistent boxed layout (uses `boxen` + `chalk`).
+
+Contract
+- prettyBox(title: string, fields: Record<string, any>): void
+
+Behavior
+- Formats values as strings and prints to stdout. It is a presentation helper only — logic remains in `src/lib/`.
+
+Example
+```ts
+prettyBox('Account', { Address: addr, Free: '123.4 DOT' });
+```
+
+---
+
+## CLI reference (developer-focused)
+
+The CLI is intentionally lightweight and intended for developer inspection. It exposes two primary groups: `rpc` and `query`.
+
+- `rpc watch` — subscribe and pretty-print new blocks (summary + events)
+- `rpc block <hash|number>` — fetch detailed block information
+- `rpc latest` — get latest block details
+- `rpc chain-info` — show node version and chain spec
+- `query account-info <address>` — show nonce and balance summary
+- `query events [-b, --block <hash>]` — show filtered events for the latest or specified block
+
+CLI notes
+- Default RPC: `wss://rpc.polkadot.io`. The CLI is developer-focused; for production workflow embed or pass a secure signer.
+
+---
+
+## Error handling, failure modes, and edge cases (professional notes)
+
+- Network / RPC failures: All operations that call the node may reject due to network errors, connection timeouts, or node rate-limits. Caller strategies: retry with backoff, reuse ApiPromise across calls, and keep subscriptions to a minimum.
+- Missing pallets: Functions that enumerate `tokens` or `assets` return empty arrays when the pallet is absent. This is intentional — the SDK should not throw for optional pallet absence.
+- Re-orgs: Event readers reflect the node's current reported state. Be aware of temporary re-orgs which can cause an event/tx to disappear from a subsequent query. Rely on finalized blocks where necessary.
+- Decoding errors: When decoding module errors (transaction failures), the library tries to map (index, error) to metadata via `api.registry.findMetaError`. If decoding fails, the raw error indices are returned for debugging.
+
+---
+
+## Security guidance
+
+- Never hard-code private keys or mnemonics. The provided `transactions` helper is for examples and developer tooling only.
+- Use browser/hardware/external signers for mainnet signing.
+- Validate RPC endpoints and consider TLS (wss) and private RPC nodes for sensitive tooling.
+
+---
+
+## Quality gates & publishing checklist
+
+Before publishing a package or using this SDK in production, ensure the following:
+
+1. Build: run the TypeScript build (tsup/tsc) and confirm there are no compile errors.
+2. Lint/format: run project linters (eslint, prettier) and fix issues.
+3. Tests: add unit tests for critical logic (event filtering, error decoding). Run tests and ensure passing.
+4. Types & exports: Add `src/index.ts` that re-exports the public surface and update `package.json` `main`/`types` to point to compiled outputs.
+5. License: add a LICENSE file and include it in the package.
+
+I can implement step 4 (export surface + package.json wiring) on request.
+
+---
+
+## Roadmap & suggested next steps
+
+- Add `src/index.ts` with a minimal, typed public surface that re-exports stable helpers.
+- Add a `--rpc` CLI flag and a secure `tx send` helper that supports external signers.
+- Add unit tests and a CI workflow that runs lint/build/tests on PRs.
+- Polish docs: examples, API reference (automatically generated from JSDoc or TypeDoc), and release notes.
+
+---
+
+## Contributing
+
+Contributions welcome. Typical workflow:
+
+1. Fork and create a feature branch.
+2. Run `pnpm install`.
+3. Implement changes, add unit tests for new logic.
+4. Run `pnpm test` and `pnpm lint` locally.
+5. Open a PR with a clear description and tests.
+
+---
+
+## License
+
+Add a LICENSE file (MIT/Apache-2.0) before publishing.
 
 # Polkakit
 
